@@ -2,7 +2,6 @@ package com.edu.ulab.app.facade;
 
 import com.edu.ulab.app.dto.BookDto;
 import com.edu.ulab.app.dto.UserDto;
-import com.edu.ulab.app.exception.NotFoundException;
 import com.edu.ulab.app.mapper.BookMapper;
 import com.edu.ulab.app.mapper.UserMapper;
 import com.edu.ulab.app.service.BookService;
@@ -60,13 +59,53 @@ public class UserDataFacade {
     }
 
     public UserBookResponse updateUserWithBooks(UserBookRequest userBookRequest) {
-        return null;
+        UserDto userDto = userMapper.userRequestToUserDto(userBookRequest.getUserRequest());
+        log.info("Get user: {}", userDto);
+
+        userDto = userService.updateUser(userDto);
+        log.info("User successfully updated: {}", userDto);
+
+        UserDto finalUserDto = userDto;
+        List<Long> bookIdList = userBookRequest.getBookRequests().stream()
+                .map(bookMapper::bookRequestToBookDto)
+                .peek(bookDto -> bookDto.setUserId(finalUserDto.getId()))
+                .peek(bookService::updateBook)
+                .peek(book -> log.info("Book successfully updated: {}", book))
+                .map(BookDto::getId)
+                .toList();
+
+        return UserBookResponse.builder()
+                .userId(userDto.getId())
+                .booksIdList(bookIdList)
+                .build();
     }
 
     public UserBookResponse getUserWithBooks(Long userId) {
-        return null;
+        UserDto user = userService.getUserById(userId);
+        log.info("Get user: {}", user);
+
+        List<BookDto> books = bookService.getBookByUserId(userId);
+        log.info("User has : {} books", books.size());
+
+        user.setBooks(books);
+
+        List<Long> bookIdList = books
+                .stream()
+                .map(BookDto::getId)
+                .toList();
+        log.info("Collected book ids: {}", bookIdList);
+
+        return UserBookResponse.builder()
+                .userId(user.getId())
+                .booksIdList(bookIdList)
+                .build();
     }
 
     public void deleteUserWithBooks(Long userId) {
+        userService.deleteUserById(userId);
+        log.info("Delete user: {}", userId);
+
+        bookService.deleteUserBookBinding(userId);
+        log.info("Delete user-book binding by user id {} ", userId);
     }
 }
