@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 public class ControllerExceptionHandler {
 
     @ExceptionHandler({NotFoundException.class, ServiceException.class})
-    public ResponseEntity<BaseWebResponse> handleNotFoundExceptionException(@NonNull final Exception exc) {
+    public ResponseEntity<BaseWebResponse> handleException(@NonNull final Exception exc) {
         HttpStatus httpStatus;
         if (exc instanceof ServiceException e) {
             httpStatus = e.getHttpStatus();
